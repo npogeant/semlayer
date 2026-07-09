@@ -1,0 +1,46 @@
+# Minimal example exercising every construct in docs/schema.md.
+# For a fuller, realistic project see the example tracked in issue #9.
+
+entities:
+  - name: orders
+    description: One row per customer order.
+    table: analytics.orders
+    primary_key: order_id
+
+  - name: customers
+    description: One row per customer.
+    table: analytics.customers
+    primary_key: customer_id
+
+dimensions:
+  - name: order_status
+    entity: orders
+    type: categorical
+    column: status
+    description: Current lifecycle status of the order.
+
+  - name: order_date
+    entity: orders
+    type: time
+    column: created_at
+
+metrics:
+  - name: total_revenue
+    entity: orders
+    description: Sum of order amounts.
+    expression: amount
+    agg: sum
+
+  - name: order_count
+    entity: orders
+    expression: order_id
+    agg: count_distinct
+
+relationships:
+  - name: orders_to_customers
+    source_entity: orders
+    target_entity: customers
+    type: many_to_one
+    join_type: inner
+    source_key: customer_id
+    target_key: customer_id

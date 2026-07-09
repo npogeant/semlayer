@@ -2,6 +2,8 @@
 
 A declarative semantic layer for defining entities, dimensions, metrics, and relationships over your data.
 
+See [`docs/schema.md`](docs/schema.md) for the semantic model YAML schema reference.
+
 ## Local development setup
 
 Requires Python 3.10+.
