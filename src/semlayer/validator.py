@@ -1,3 +1,4 @@
+from semlayer._graph import build_adjacency, find_cycle
 from semlayer.models import Relationship, SemanticModel
 
 
@@ -62,29 +63,8 @@ def _check_no_circular_relationships(relationships: list[Relationship]) -> None:
     # so a cycle back to an entity already on the current path — including
     # a self-relationship or two relationships declared in opposite
     # directions between the same pair of entities — is treated as circular.
-    graph: dict[str, list[str]] = {}
-    for relationship in relationships:
-        graph.setdefault(relationship.source_entity, []).append(relationship.target_entity)
-        graph.setdefault(relationship.target_entity, [])
-
-    WHITE, GRAY, BLACK = 0, 1, 2
-    color = dict.fromkeys(graph, WHITE)
-    path: list[str] = []
-
-    def visit(node: str) -> None:
-        color[node] = GRAY
-        path.append(node)
-        for neighbor in graph[node]:
-            if color[neighbor] == GRAY:
-                cycle = path[path.index(neighbor) :] + [neighbor]
-                raise SemanticModelValidationError(
-                    f"Circular relationship detected: {' -> '.join(cycle)}"
-                )
-            if color[neighbor] == WHITE:
-                visit(neighbor)
-        path.pop()
-        color[node] = BLACK
-
-    for node in list(graph):
-        if color[node] == WHITE:
-            visit(node)
+    edges = [(r.source_entity, r.target_entity) for r in relationships]
+    graph = build_adjacency(edges)
+    cycle = find_cycle(graph)
+    if cycle:
+        raise SemanticModelValidationError(f"Circular relationship detected: {' -> '.join(cycle)}")
