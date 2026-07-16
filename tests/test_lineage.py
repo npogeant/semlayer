@@ -122,6 +122,17 @@ def test_metric_lineage_safe_against_relationship_cycles():
     assert [e.name for e in lineage.entities] == ["orders", "customers"]
 
 
+def test_format_metric_lineage_with_no_dimensions_says_none():
+    model = SemanticModel(
+        entities=[ORDERS],
+        metrics=[Metric(name="total_revenue", entity="orders", expression="amount", agg="sum")],
+    )
+
+    output = format_metric_lineage(metric_lineage(model, "total_revenue"))
+
+    assert "  (none)" in output
+
+
 def test_format_metric_lineage_reports_entities_and_dimensions():
     model = load_semantic_model(EXAMPLE_SCHEMA)
     lineage = metric_lineage(model, "total_revenue")

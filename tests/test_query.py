@@ -19,6 +19,7 @@ CUSTOMERS = Entity(name="customers", table="customers", primary_key="customer_id
 REGIONS = Entity(name="regions", table="regions", primary_key="region_id")
 
 ORDER_STATUS = Dimension(name="order_status", entity="orders", type="categorical", column="status")
+ORDER_AMOUNT = Dimension(name="order_amount", entity="orders", type="numeric", column="amount")
 CUSTOMER_TIER = Dimension(
     name="customer_tier", entity="customers", type="categorical", column="tier"
 )
@@ -48,7 +49,7 @@ CUSTOMERS_TO_REGIONS = Relationship(
 
 MODEL = SemanticModel(
     entities=[ORDERS, CUSTOMERS, REGIONS],
-    dimensions=[ORDER_STATUS, CUSTOMER_TIER, REGION_NAME],
+    dimensions=[ORDER_STATUS, ORDER_AMOUNT, CUSTOMER_TIER, REGION_NAME],
     metrics=[TOTAL_REVENUE, ORDER_COUNT],
     relationships=[ORDERS_TO_CUSTOMERS, CUSTOMERS_TO_REGIONS],
 )
@@ -150,6 +151,62 @@ def test_in_filter_expands_to_one_placeholder_per_value(db):
     assert "IN (?, ?)" in query.sql
     rows = run(db, query)
     assert rows == [(400,)]
+
+
+def test_grouping_by_multiple_dimensions_across_a_join(db):
+    query = translate_metric_query(
+        MODEL,
+        MetricRequest(metric="total_revenue", dimensions=["order_status", "customer_tier"]),
+    )
+
+    rows = {(status, tier): total for status, tier, total in run(db, query)}
+    assert rows == {
+        ("shipped", "gold"): 350,
+        ("shipped", "silver"): 20,
+        ("cancelled", "silver"): 30,
+    }
+
+
+def test_multiple_filters_are_combined_with_and(db):
+    query = translate_metric_query(
+        MODEL,
+        MetricRequest(
+            metric="total_revenue",
+            filters=[
+                Filter(dimension="order_status", operator="=", value="shipped"),
+                Filter(dimension="customer_tier", operator="=", value="gold"),
+            ],
+        ),
+    )
+
+    assert "WHERE orders.status = ? AND customers.tier = ?" in query.sql
+    assert query.params == ["shipped", "gold"]
+    rows = run(db, query)
+    assert rows == [(350,)]
+
+
+def test_comparison_operator_filter(db):
+    query = translate_metric_query(
+        MODEL,
+        MetricRequest(
+            metric="total_revenue",
+            filters=[Filter(dimension="order_amount", operator=">", value=50)],
+        ),
+    )
+
+    assert "WHERE orders.amount > ?" in query.sql
+    rows = run(db, query)
+    assert rows == [(300,)]
+
+
+def test_unsupported_aggregation_raises_clear_error():
+    model = SemanticModel(
+        entities=[ORDERS],
+        metrics=[Metric(name="weird_metric", entity="orders", expression="amount", agg="median")],
+    )
+
+    with pytest.raises(QueryError, match="Unsupported aggregation 'median'"):
+        translate_metric_query(model, MetricRequest(metric="weird_metric"))
 
 
 def test_count_distinct_metric_translates_to_count_distinct_sql(db):

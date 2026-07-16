@@ -26,6 +26,10 @@ def test_valid_model_from_docs_example_passes():
     validate_semantic_model(model)  # should not raise
 
 
+def test_empty_model_passes():
+    validate_semantic_model(SemanticModel())  # should not raise
+
+
 def test_valid_hand_built_model_passes():
     model = SemanticModel(
         entities=[ORDERS, CUSTOMERS],
