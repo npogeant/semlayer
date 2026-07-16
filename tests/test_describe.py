@@ -43,6 +43,14 @@ def test_describe_entity_shows_dimensions_and_relationships(model):
     assert "orders (customer_id) -> customers (customer_id)" in output
 
 
+def test_describe_entities_with_no_entities_says_none_defined():
+    assert describe_entities(SemanticModel()) == "No entities defined."
+
+
+def test_describe_metrics_with_no_metrics_says_none_defined():
+    assert describe_metrics(SemanticModel()) == "No metrics defined."
+
+
 def test_describe_entity_with_no_dimensions_or_relationships_says_none():
     model = SemanticModel(entities=[Entity(name="lonely", table="t", primary_key="id")])
 
