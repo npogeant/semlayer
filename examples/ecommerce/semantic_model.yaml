@@ -1,0 +1,74 @@
+entities:
+  - name: orders
+    description: One row per order line (an order can have multiple lines).
+    table: analytics.orders
+    primary_key: order_id
+
+  - name: customers
+    description: One row per customer.
+    table: analytics.customers
+    primary_key: customer_id
+
+  - name: products
+    description: One row per product in the catalog.
+    table: analytics.products
+    primary_key: product_id
+
+dimensions:
+  - name: order_status
+    entity: orders
+    type: categorical
+    column: status
+    description: Current lifecycle status of the order.
+
+  - name: order_date
+    entity: orders
+    type: time
+    column: created_at
+
+  - name: customer_segment
+    entity: customers
+    type: categorical
+    column: segment
+    description: Marketing segment the customer belongs to.
+
+  - name: product_category
+    entity: products
+    type: categorical
+    column: category
+
+metrics:
+  - name: total_revenue
+    entity: orders
+    description: Total revenue across all order lines.
+    expression: quantity * unit_price
+    agg: sum
+
+  - name: order_count
+    entity: orders
+    description: Number of distinct orders.
+    expression: order_id
+    agg: count_distinct
+
+  - name: avg_order_value
+    entity: orders
+    description: Average revenue per order line.
+    expression: quantity * unit_price
+    agg: avg
+
+relationships:
+  - name: orders_to_customers
+    source_entity: orders
+    target_entity: customers
+    type: many_to_one
+    join_type: inner
+    source_key: customer_id
+    target_key: customer_id
+
+  - name: orders_to_products
+    source_entity: orders
+    target_entity: products
+    type: many_to_one
+    join_type: inner
+    source_key: product_id
+    target_key: product_id
