@@ -4,6 +4,8 @@ A declarative semantic layer for defining entities, dimensions, metrics, and rel
 
 See [`docs/schema.md`](docs/schema.md) for the semantic model YAML schema reference.
 
+See [`examples/ecommerce`](examples/ecommerce) for a starting-point example model and a walkthrough of the CLI.
+
 ## Local development setup
 
 Requires Python 3.10+.
